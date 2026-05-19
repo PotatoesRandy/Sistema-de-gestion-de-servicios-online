@@ -4,58 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reportes | Servicios Online</title>
-    <link rel="stylesheet" href="/CSS/Inicio.css">
+    <link rel="stylesheet" href="CSS/App.css">
 </head>
 <body>
-    <div class="dashboard">
-        <aside class="sidebar">
-            <div>
-                <h2>Mi panel</h2>
-                <div class="user-card">
-                    <p><strong>Usuario:</strong> Juan Pérez</p>
-                    <p><strong>Rol:</strong> Cliente</p>
-                </div>
-            </div>
-            <div>
-                <p class="section-title">Navegación</p>
-                <nav>
-                    <a href="Inicio.html">Inicio</a>
-                    <a href="Servicios.html">Servicios</a>
-                    <a href="Solicitudes.html">Mis Solicitudes</a>
-                    <a href="Pagos.html">Pagos</a>
-                    <a href="Resenas.html">Reseñas</a>
-                    <a href="Reportes.html" class="active">Reportes</a>
-                    <a href="Perfil.html">Perfil</a>
-                    <a href="Login.html">Cerrar sesión</a>
-                </nav>
-            </div>
-        </aside>
-        <main class="main">
-            <header>
-                <div>
-                    <h1>Reportes del sistema</h1>
-                    <p>Genera informes de solicitudes, pagos y uso de servicios.</p>
-                </div>
-            </header>
-            <div class="cards">
-                <div class="card">
-                    <h3>Reporte mensual</h3>
-                    <p>Resumen de servicios y gastos durante el mes.</p>
-                </div>
-                <div class="card">
-                    <h3>Estado de pagos</h3>
-                    <p>Analiza los pagos completados, pendientes y rechazados.</p>
-                </div>
-                <div class="card">
-                    <h3>Servicios utilizados</h3>
-                    <p>Consulta qué servicios has usado más frecuentemente.</p>
-                </div>
-                <div class="card">
-                    <h3>Descargar reporte</h3>
-                    <p>Exporta información en PDF, Excel o CSV.</p>
-                </div>
-            </div>
-        </main>
-    </div>
+    <script src="JS/app.js"></script>
+    <script>ServiciosApp.initReportes();</script>
 </body>
 </html>

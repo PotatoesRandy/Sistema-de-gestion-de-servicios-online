@@ -1,34 +1,40 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | Servicios Online</title>
-    <link rel="stylesheet" href="/CSS/Login.css">
+    <link rel="stylesheet" href="CSS/App.css">
 </head>
 <body>
-    <div class="login">
-        <div class="login-left">
-            <div class="login-left-content">
-                <h2>Servicios Online</h2>
-                <p>Accede rápidamente a tus servicios desde cualquier dispositivo.</p>
+    <div class="auth-shell">
+        <section class="auth-brand">
+            <div>
+                <h1>Servicios Online</h1>
+                <p>Gestiona servicios, solicitudes, pagos, reportes y resenas desde un solo panel conectado a Spring Boot.</p>
             </div>
-        </div>
-        <div class="login-right">
-            <h1>Iniciar Sesión</h1>
-            <form action="/login" method="post">
-                <div class="usuario">
-                    <label for="username">Usuario:</label>
-                    <input type="text" id="username" name="username" required>
+        </section>
+        <section class="auth-panel">
+            <form class="auth-card" id="loginForm">
+                <h2>Iniciar sesion</h2>
+                <p>Ingresa con un usuario de la tabla usuarios.</p>
+                <div id="authMessage" class="message"></div>
+                <div class="field">
+                    <label for="username">Usuario</label>
+                    <input type="text" id="username" name="username" autocomplete="username" required>
                 </div>
-                <div class="usuario">
-                    <label for="password">Contraseña:</label>
-                    <input type="password" id="password" name="password" required>
+                <div class="field">
+                    <label for="password">Contrasena</label>
+                    <input type="password" id="password" name="password" autocomplete="current-password" required>
                 </div>
-                <button type="submit">Login</button>
-                <a href="/Registro.html">¿No tiene cuenta? Regístrese aquí.</a>
+                <div class="actions">
+                    <button type="submit">Entrar</button>
+                    <a class="button secondary" href="Registro.html">Crear cuenta</a>
+                </div>
             </form>
-        </div>
+        </section>
     </div>
+    <script src="JS/app.js"></script>
+    <script>ServiciosApp.initLogin();</script>
 </body>
 </html>

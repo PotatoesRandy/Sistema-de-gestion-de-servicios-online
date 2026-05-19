@@ -25,6 +25,11 @@ class ApiExceptionHandler {
     return error(HttpStatus.BAD_REQUEST, "Datos invalidos: " + ex.getMessage(), request.getRequestURI());
   }
 
+  @ExceptionHandler(IllegalArgumentException.class)
+  ResponseEntity<Map<String, Object>> badRequest(IllegalArgumentException ex, HttpServletRequest request) {
+    return error(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
+  }
+
   @ExceptionHandler(DataIntegrityViolationException.class)
   ResponseEntity<Map<String, Object>> dataIntegrity(DataIntegrityViolationException ex, HttpServletRequest request) {
     return error(HttpStatus.CONFLICT, "La operacion entra en conflicto con una restriccion de la base de datos.", request.getRequestURI());

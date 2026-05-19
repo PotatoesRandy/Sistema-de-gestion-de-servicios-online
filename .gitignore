@@ -1,0 +1,4 @@
+mysql-data/
+mysql.log
+mysql.err.log
+mysql-local.ini

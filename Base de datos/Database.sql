@@ -1,5 +1,5 @@
 -- =====================================================
--- BASE DE DATOS: Centro de Gestión de Servicios Online
+-- BASE DE DATOS: Centro de Gestion de Servicios Municipales Online
 -- GESTOR: MySQL
 -- =====================================================
 
@@ -88,6 +88,9 @@ CREATE TABLE solicitudes (
     estado ENUM('pendiente', 'confirmada', 'en_progreso', 'completada', 'cancelada') DEFAULT 'pendiente',
     prioridad ENUM('baja', 'media', 'alta', 'urgente') DEFAULT 'media',
     descripcion_problema TEXT,
+    ubicacion_texto VARCHAR(255),
+    latitud DECIMAL(10, 6),
+    longitud DECIMAL(10, 6),
     notas_internas TEXT,
     calificacion_usuario INT COMMENT 'Del 1 al 5',
     resena_usuario TEXT,
@@ -195,7 +198,7 @@ CREATE TABLE reportes_sistema (
     tipo_reporte ENUM('resumen_solicitudes', 'estado_pagos', 'servicios_utilizados', 'gastos_mensuales', 'rendimiento_tecnicos') NOT NULL,
     fecha_desde DATE,
     fecha_hasta DATE,
-    formato ENUM('pdf', 'excel', 'csv') DEFAULT 'pdf',
+    formato ENUM('pantalla') DEFAULT 'pantalla',
     url_descarga VARCHAR(255),
     fecha_generacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
@@ -258,22 +261,17 @@ ALTER TABLE notificaciones ADD INDEX idx_usuario_tipo (usuario_id, tipo);
 
 -- Insertar categorías de servicios
 INSERT INTO categorias_servicios (nombre, descripcion) VALUES
-('Reparación Electrónica', 'Reparación de equipos electrónicos'),
-('Plomería', 'Servicios de plomería e instalación'),
-('Electricidad', 'Servicios eléctricos y mantenimiento'),
-('Limpieza', 'Servicios de limpieza profesional'),
-('Jardinería', 'Mantenimiento y diseño de jardines'),
-('Carpintería', 'Trabajos de carpintería y mueblería');
+('Espacios públicos', 'Reservas y permisos de uso de espacios municipales'),
+('Movilidad urbana', 'Solicitudes relacionadas con calles, tránsito y estacionamiento'),
+('Eventos comunitarios', 'Permisos para actividades vecinales y culturales'),
+('Ambiente y limpieza', 'Reportes y solicitudes de limpieza urbana'),
+('Atención ciudadana', 'Servicios generales del ayuntamiento'),
+('Obras públicas', 'Solicitudes relacionadas con obras y mantenimiento urbano');
 
 -- Insertar usuarios de ejemplo
 INSERT INTO usuarios (username, email, password, nombre, apellido, telefono, tipo_usuario, documento_identidad) VALUES
 ('admin', 'admin@servicios.com', SHA2('admin123', 256), 'Administrador', 'Sistema', '1234567890', 'admin', '0000000000'),
 ('juan_cliente', 'juan@email.com', SHA2('cliente123', 256), 'Juan', 'Pérez', '3001234567', 'cliente', '12345678'),
-('maria_tecnico', 'maria@email.com', SHA2('tecnico123', 256), 'María', 'García', '3009876543', 'tecnico', '87654321');
+('maria_funcionaria', 'maria@email.com', SHA2('tecnico123', 256), 'María', 'García', '3009876543', 'tecnico', '87654321');
 
--- Insertar servicios de ejemplo
-INSERT INTO servicios (categoria_id, nombre, descripcion, precio_base, tiempo_estimado, disponibilidad, crear_por) VALUES
-(1, 'Reparación TV LCD', 'Reparación de televisores LCD de cualquier tamaño', 150.00, 60, 'disponible', 1),
-(2, 'Destapación de Tuberías', 'Destapación profesional de tuberías obstruidas', 80.00, 45, 'disponible', 1),
-(3, 'Instalación Eléctrica', 'Instalación de circuitos y enchufes', 120.00, 120, 'disponible', 1),
-(4, 'Limpieza Profunda', 'Limpieza completa del hogar', 200.00, 180, 'disponible', 1);
+-- Catalogo municipal inicial vacio.

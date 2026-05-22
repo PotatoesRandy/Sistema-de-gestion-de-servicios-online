@@ -85,7 +85,7 @@ class HomeController {
   Map<String, Object> home() {
     return Map.of(
         "status", "ok",
-        "service", "servicios-online",
+        "service", "ayuntamiento-online",
         "endpoints", List.of(
             "/api/health",
             "/api/usuarios",
@@ -107,7 +107,7 @@ class HomeController {
 class HealthController {
   @GetMapping
   Map<String, String> health() {
-    return Map.of("status", "ok", "service", "servicios-online");
+    return Map.of("status", "ok", "service", "ayuntamiento-online");
   }
 }
 
@@ -145,8 +145,48 @@ class CategoriaServicioController extends CrudController<CategoriaServicio> {
 @RestController
 @RequestMapping("/servicios")
 class ServicioController extends CrudController<Servicio> {
-  ServicioController(ServicioRepository repository) {
+  private final ServicioRepository servicioRepository;
+  private final UsuarioRepository usuarioRepository;
+
+  ServicioController(ServicioRepository repository, UsuarioRepository usuarioRepository) {
     super(repository, "Servicio");
+    this.servicioRepository = repository;
+    this.usuarioRepository = usuarioRepository;
+  }
+
+  @Override
+  List<Servicio> list() {
+    return servicioRepository.findAll().stream()
+        .filter(servicio -> !"no_disponible".equals(servicio.disponibilidad))
+        .toList();
+  }
+
+  @Override
+  Servicio beforeCreate(Servicio servicio) {
+    Integer creadorId = servicio.crearPor == null ? null : servicio.crearPor.id;
+    Usuario creador = creadorId == null ? null : usuarioRepository.findById(creadorId).orElse(null);
+    if (creador == null || !"admin".equals(creador.tipoUsuario)) {
+      throw new IllegalArgumentException("Solo el administrador puede crear servicios.");
+    }
+    boolean nombreDuplicado = servicioRepository.findAll().stream()
+        .anyMatch(existing -> existing.nombre != null
+            && servicio.nombre != null
+            && existing.nombre.equalsIgnoreCase(servicio.nombre));
+    if (nombreDuplicado) {
+      throw new IllegalArgumentException("Ya existe un servicio con ese nombre.");
+    }
+    servicio.precioBase = java.math.BigDecimal.ZERO;
+    return servicioRepository.save(servicio);
+  }
+
+  @Override
+  @DeleteMapping("/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  void delete(@PathVariable Integer id) {
+    Servicio servicio = servicioRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Servicio no encontrado: " + id));
+    servicio.disponibilidad = "no_disponible";
+    servicioRepository.save(servicio);
   }
 }
 
@@ -154,10 +194,12 @@ class ServicioController extends CrudController<Servicio> {
 @RequestMapping("/solicitudes")
 class SolicitudController extends CrudController<Solicitud> {
   private final SolicitudRepository solicitudRepository;
+  private final UsuarioRepository usuarioRepository;
 
-  SolicitudController(SolicitudRepository solicitudRepository) {
+  SolicitudController(SolicitudRepository solicitudRepository, UsuarioRepository usuarioRepository) {
     super(solicitudRepository, "Solicitud");
     this.solicitudRepository = solicitudRepository;
+    this.usuarioRepository = usuarioRepository;
   }
 
   @GetMapping("/numero/{numeroSolicitud}")
@@ -166,8 +208,69 @@ class SolicitudController extends CrudController<Solicitud> {
         .orElseThrow(() -> new ResourceNotFoundException("Solicitud no encontrada: " + numeroSolicitud));
   }
 
+  @PutMapping("/{id}/cancelar")
+  Solicitud cancelar(@PathVariable Integer id, @RequestBody Map<String, String> request) {
+    Solicitud solicitud = solicitudRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Solicitud no encontrada: " + id));
+    Usuario usuario = usuarioRepository.findById(Integer.valueOf(request.getOrDefault("usuarioId", "0")))
+        .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
+    String motivo = request.getOrDefault("motivo", "").trim();
+
+    if (motivo.isBlank()) {
+      throw new IllegalArgumentException("Debes justificar la cancelacion.");
+    }
+    if ("cancelada".equals(solicitud.estado)) {
+      throw new IllegalArgumentException("La solicitud ya esta cancelada.");
+    }
+    if ("completada".equals(solicitud.estado)) {
+      throw new IllegalArgumentException("No se puede cancelar una solicitud completada.");
+    }
+    if (!"admin".equals(usuario.tipoUsuario)
+        && (solicitud.usuario == null || !usuario.id.equals(solicitud.usuario.id))) {
+      throw new IllegalArgumentException("No tienes permiso para cancelar esta solicitud.");
+    }
+
+    String actor = "admin".equals(usuario.tipoUsuario) ? "Administrador" : "Cliente";
+    solicitud.estado = "cancelada";
+    solicitud.notasInternas = actor + " " + usuario.nombre + " " + usuario.apellido + ": " + motivo;
+    return solicitudRepository.save(solicitud);
+  }
+
+  @PutMapping("/{id}/aceptar")
+  Solicitud aceptar(@PathVariable Integer id, @RequestBody Map<String, String> request) {
+    Solicitud solicitud = solicitudRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Solicitud no encontrada: " + id));
+    Usuario usuario = usuarioRepository.findById(Integer.valueOf(request.getOrDefault("usuarioId", "0")))
+        .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
+
+    if (!"admin".equals(usuario.tipoUsuario)) {
+      throw new IllegalArgumentException("No tienes permiso para aceptar esta solicitud.");
+    }
+    if ("cancelada".equals(solicitud.estado)) {
+      throw new IllegalArgumentException("La solicitud esta cancelada.");
+    }
+    if ("completada".equals(solicitud.estado)) {
+      throw new IllegalArgumentException("La solicitud esta completada.");
+    }
+
+    solicitud.estado = "confirmada";
+    solicitud.notasInternas = null;
+    return solicitudRepository.save(solicitud);
+  }
+
   @Override
   Solicitud beforeCreate(Solicitud solicitud) {
+    boolean horarioOcupado = solicitudRepository.findAll().stream()
+        .anyMatch(existing -> existing.servicio != null
+            && solicitud.servicio != null
+            && existing.servicio.id != null
+            && existing.servicio.id.equals(solicitud.servicio.id)
+            && existing.fechaProgramada != null
+            && existing.fechaProgramada.equals(solicitud.fechaProgramada)
+            && !"cancelada".equals(existing.estado));
+    if (horarioOcupado) {
+      throw new IllegalArgumentException("Ya existe una solicitud para ese servicio en la misma fecha y hora.");
+    }
     if (solicitud.numeroSolicitud == null || solicitud.numeroSolicitud.isBlank()) {
       solicitud.numeroSolicitud = generarNumeroSolicitud();
     }
@@ -175,7 +278,7 @@ class SolicitudController extends CrudController<Solicitud> {
   }
 
   private String generarNumeroSolicitud() {
-    String timestamp = DateTimeFormatter.ofPattern("yyMMddHHmmss").format(LocalDateTime.now());
+    String timestamp = DateTimeFormatter.ofPattern("yyMMddHHmmssSSS").format(LocalDateTime.now());
     return "SOL-" + timestamp;
   }
 }

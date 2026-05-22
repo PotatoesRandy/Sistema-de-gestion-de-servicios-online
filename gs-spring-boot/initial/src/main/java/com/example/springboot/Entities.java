@@ -410,7 +410,7 @@ class ReporteSistema {
   public LocalDate fechaHasta;
 
   @Size(max = 20)
-  public String formato = "pdf";
+  public String formato = "pantalla";
 
   @Column(name = "url_descarga")
   @Size(max = 255)
